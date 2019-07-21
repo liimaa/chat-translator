@@ -21,6 +21,10 @@ Chat translator is Javascript translation addon for chats.
 
 # Faq
 
+  ### Keybinds
+      Open panel : Shift Q
+      Start translator : Shift T
+
   ### Adding new site
       name : site name
       match : url | site url that chat is in
