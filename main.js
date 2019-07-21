@@ -1,26 +1,3 @@
-// ==UserScript==
-// @name         liima's chat translate
-// @namespace    none
-// @version      1.0.0
-// @description  try to take over the world!
-// @author       liima
-// @match        https://www.twitch.tv/*
-// @match        https://www.youtube.com/watch?*
-// @match        https://www.smashcast.tv/*
-// @match        https://mixer.com/*
-// @match        http://www.bigo.tv/*
-// @match        play.afreecatv.com/*
-// @match        https://www.huya.com/*
-// @match        https://instagib.tv/*
-// @match        https://live.bilibili.com/*
-// @match        https://*.nicovideo.jp/*
-// @match        https://sketch.pixiv.net/@*
-//// @match        https://livestream.com/accounts/6395980/live
-// @match        https://www.periscope.tv/w/*
-// @match        http://localhost:8000/*
-// @run-at       document-start
-// @grant        none
-// ==/UserScript==
 
 (function () {
 
@@ -85,9 +62,6 @@
                 };
             $.on(el, 'mousedown', function (e) {
                 isDragReady = true;
-                var a = e.pageX || e.clientX + (doc.scrollLeft ? doc.scrollLeft : docbody.scrollLeft);
-                var b = e.pageY || e.clientY + (doc.scrollTop ? doc.scrollTop : docbody.scrollTop);
-
                 if(container) {
                     dragoffset.x = e.pageX - container.offsetLeft;
                     dragoffset.y = e.pageY - container.offsetTop;
@@ -100,7 +74,6 @@
                 isDragReady = false;
             });
             $.on(document, 'mousemove', function (e) {
-                //console.log("e", e);
                 if (isDragReady) {
                     e.pageX || e.clientX + (doc.scrollLeft ? doc.scrollLeft : docbody.scrollLeft);
                     e.pageY || e.clientY + (doc.scrollTop ? doc.scrollTop : docbody.scrollTop);
@@ -114,17 +87,37 @@
                 }
             });
         };
+        $.load = {
+            option: function() {
+                //console.log(this, Conf[this.name]);
+                if(this.multiple) {
+                    for (var i = 0; i < this.options.length; i++) {
+                        this.options[i].selected = Conf[this.name].indexOf(this.options[i].value) >= 0;
+                    }
+                } else {
+                    this.value = Conf[this.name];
+                }
+            }
+        }
         $.save = {
-
             tgl: function() {
                 Conf[this.name] = this.toggle = !this.toggle;
                 $.save.save();
             },
-
+            option: function() {
+                if(this.multiple) {
+                    var arr = [];
+                    Array.from(this.selectedOptions).forEach(el => arr.push(el.value));
+                    Conf[this.name] = arr
+                } else {
+                    Conf[this.name] = [this.selectedOptions[0].value];
+                }
+                $.save.save()
+            },
             input: function() {
                 //console.log("this", this.name, this.value, Conf);
                 if(!this.value) return;
-                for (let i = 0; i < Conf[this.name].length; i++) {
+                for (var i = 0; i < Conf[this.name].length; i++) {
                     Conf[this.name][0] = this.value;
                 }
                 this.placeholder = this.value;
@@ -133,7 +126,7 @@
             },
             checkbox: function() {
                 //console.log(this, this.name, this.checked, Conf);
-                for (let i = 0; i < Conf[this.name].length; i++) {
+                for (var i = 0; i < Conf[this.name].length; i++) {
                     Conf[this.name][0] = this.checked;
                 }
                 $.save.save();
@@ -178,6 +171,8 @@
      *   obsconfig : 'optional'  | MutationObserver config default is, childList : true
      *   button : 'optional' .element | prepend's to element
      *   iframe : 'optional' .element | if chat is located inside iframe this is needed
+     *   user : 'optional' .element
+     *   badge :  'optional' .element
     */ 
 
     var Site = {
@@ -286,14 +281,15 @@
             match: "twitch.tv/",
             chat: ".chat-list [role='log']",
             chatline: "span[data-a-target='chat-message-text']",
-            button: ".top-nav__menu > div:nth-child(3)"
+            button: ".top-nav__menu > div:nth-child(3)",
+            user: ".chat-line__username",
+            badge: ".chat-line__message > span"
         }, {
             name: "youtube.com",
             match: "youtube.com/watch?", //live_chat?
             chat: "#item-offset #items",
             chatline: "#message",
             button: "#buttons .ytd-masthead",
-            //obsconfig: { childList: true, subtree: true },
             iframe: "#chatframe"
         }, {
             name: "smashcast",
@@ -366,15 +362,15 @@
         },
         settings: {
             "translate text": [false, "translates chat"],
-            "Replace text": [false, "Replaces translated text with whitespace"],
-            "Ignore spam": [true, "Ignore's spamlike messages"]
+            "replace text": [false, "Replaces translated text with whitespace"],
+            "ignore spam": [true, "Ignore's spamlike messages"]
         },
         inputSettings: {
             "apikey": ["trnsl.1.1.20190123T075015Z.16e7f20b61b0463d.7a0405224ebdc152dbe31bcb3c34262a74e2b170", "Yandex api key"],
         },
-        apivalues: {
+        languageSettings: {
             "language1": ["fi"],
-            "language2": ["ko, ja, zh"]
+            "language2": ["ko", "ja", "zh"]
         },
         keybinds: {
             "toggle": ["Shift Q", "toggles panel visibility"],
@@ -411,21 +407,9 @@
                             })
                         )
                     } else {
-                        console.log("normal load", site.chat);
                         $.wait(site.chat, (e) => {
                             console.log(site);
                             translator(site);
-                        });
-                    }
-                    if(site.button) {
-                        $.wait(site.button, (e) => { 
-                            console.log("button", e);
-                            var ct = $.el("div", "ct-button", "CT");
-                            ct.style.cursor = 'pointer'; 
-                            ct.style.fontSize = "14px";
-                            ct.style.margin = "auto 10px";
-                            e.insertBefore(ct, e.childNodes[0])
-                            $.on(ct, "click", () => $.tgl($(".ct-ct"), "ct-hidden"))
                         });
                     }
                 }
@@ -434,81 +418,95 @@
 
         const translator = (site) => {    
 
-            var a = $(".ct-language1")
-            console.log("parent", a);
-            
-            $.on($(".ct-language2"), "change", language().save);
-            $.on($(".ct-language1"), "change", language().save);
+            if(site.button) {
+                $.wait(site.button, (e) => { 
+                    //console.log("button", e);
+                    var ct = $.el("div", "ct-button", "CT");
+                    ct.style.cursor = 'pointer'; 
+                    ct.style.fontSize = "14px";
+                    ct.style.margin = "auto 10px";
+                    e.insertBefore(ct, e.childNodes[0])
+                    $.on(ct, "click", () => $.tgl($(".ct-ct"), "ct-hidden"))
 
-            language().load();
+                });
+            }
 
-            //setInterval(() => $.save.save(), 20000);
+            observe(site, (props) => {
+                const {node, user, badge} = props
+                
+                if(!node) return
 
-            console.log("shit");
 
-            observe(site, (node) => {
+                if(site.badge) {
+                    const {users} = App.addon()
+                    if(users.developer.indexOf(user.textContent) !== -1) { 
+                        var el;
+                        $.add(badge, el = $.el("img", "ct-badge"))
+                        el.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwwAADsMBx2+oZAAAAFRJREFUOE/NjEEOwCAMw/j/pzskRx1NuTBxmE+NSRhxyK8HoyLb0MO2hEwk84E8IQIRDxtlfBmshdsDa080MJt0r7xu7OZI3kwPpOoY/IPO8aAQ8QAVLnamZKyidwAAAABJRU5ErkJggg=="
+                        el.setAttribute("title", "chat translator developer")
+                        el.style.cursor = 'help'; 
+                    }
+                }
+
+                if(!Conf["translate text"][0]) return
+
                 const detect = fetcher("https://translate.yandex.net/api/v1.5/tr.json/detect",
-                "key=" + Conf["apikey"][0] + "&text=");
+                    "key=" + Conf["apikey"][0] + "&text=");
     
                 const translate = fetcher("https://translate.yandex.net/api/v1.5/tr.json/translate",
                     "key=" + Conf["apikey"][0] + "&lang=" + Conf["language1"] + "&text=");   
 
-                // console.log(`
-                //     ${node}
-                //     ${Conf["translate text"][0]}
-                // `)
-                /*
-                ${Conf["apikey"][0]}
-                */
+                //console.log(node, node.textContent);
 
-                console.log(node, node.textContent);
-                if(!Conf["translate text"][0]) return
-
+                if(!Conf["apikey"][0]) {
+                    alert("Error no apikey. Insert Yandex apikey to start translator.")
+                }
 
                 // translate(node.textContent).then(json => {
                 //     console.log(json);
                 // });
 
-                if(Conf["Ignore spam"][0]) {
+                if(Conf["ignore spam"][0]) {
                     if(spamFilter(node)) {
                         console.log(`filtered ${node.innerText}`)
                         return;
                     }
                 }
 
+                //do...
                 stats(node);
-
-                if($(".ct-language2").selectedOptions < 93) {
-
-                    console.log("wtf");
+                
+                return
+                
+                //no detection if all languages are selected
+                if(Conf["language2"].length < 93) {
 
                     detect(node.textContent).then(json => {
-                        console.log(json, json.lang);
-                        
-                        if(json.lang === Conf["language2"]) {
+                        //console.log(json);
 
+                        if(Conf["language2"].indexOf(json.lang) !== -1) {
                             translate(node.textContent).then(json => {
-
-                                if(Conf["replace text"][0]) node.innerHTML = json.text;
-                                else node.innerHTML = node.innerHTML + " | " + json.text;
-
+                                //console.log("in", json.text, node);
+                                if(Conf["replace text"][0]) {
+                                    node.innerHTML = json.text;
+                                } else {
+                                    node.innerHTML = node.innerHTML + " | " + json.text;
+                                }
                             });
                         }
                     });
 
                 } else {
-
-                    //console.log("wtf", node.textContent);
-
+                    //console.log("asd", node.textContent);
                     translate(node.textContent).then(json => {
-                        console.log(json, json.text);
-
-                        if(Conf["Replace text"][0]) node.innerHTML = json.text;
-                        else node.innerHTML = node.innerHTML + " | " + json.text;
-
+                        //console.log(json, json.text);
+                        if(Conf["replace text"][0]) {
+                            node.innerHTML = json.text;
+                        } else {
+                            node.innerHTML = node.innerHTML + " | " + json.text;
+                        }
                     });
                 }
-                
             });
         };
 
@@ -543,38 +541,13 @@
             return filter.test(node);
         };
     
-        const language = () => {
-
-            const language1 = $(".ct-language1"),
-                  language2 = $(".ct-language2");
-
-            const load = () => {
-                for (var i = 0; i < language2.options.length; i++) {
-                    language2.options[i].selected = Conf["language2"].indexOf(language2.options[i].value) >= 0;
-                }
-                language1.value = Conf["language1"];
-                $(".ct-output").innerHTML = Conf["language2"];
-            };
-
-            const save = () => {
-                let arr = [];
-                Array.from(language2.selectedOptions).forEach(el => arr.push(el.value));
-                Conf["language2"] = arr; 
-                Conf["language1"] = [language1.selectedOptions[0].value];
-                $.save.save();
-                $(".ct-output").innerHTML = Conf["language2"];
-            }; 
-
-            return { load, save };
-        };
-
         const observe = (site, callback) => {
 
-            let node;
+            let nodes, node, chatline, user, badge;
             const doc = site.iframe ? site.doc : document;
             const obsconfig = site.obsconfig ? site.obsconfig : { childList: true};
 
-            console.log("check frame", doc, $(site.chat, doc));
+            //console.log("check frame", doc, $(site.chat, doc));
 
             new MutationObserver((mutations) => {
 
@@ -582,36 +555,23 @@
 
                     for (let i = 0; i < mutation.addedNodes.length; i++) {
                         //console.log(mutation.addedNodes);
-                        const nodes = mutation.addedNodes[i];
-
-
-                        let chatline = $(site.chatline, nodes);
-
+                        nodes = mutation.addedNodes[i];
+                        chatline = $(site.chatline, nodes);
 
                         try {
-                            //if(chatline.innerText === "" || !chatline.innerText) return 
-
+                            user = $(site.user, nodes)
+                            badge = $(site.badge, nodes)
                             node = chatline.innerText ? chatline : nodes
 
                         } catch (error) {
                             //console.log("chatline error", error);
                         }
-
-                       // console.log(node);
-                        //node = $(site.chatline, nodes) ? $(site.chatline, nodes) : nodes
-                        //console.log($(site.chatline, nodes).innerText);
-                        //console.log($(site.chatline, nodes));
-                        //console.log($(site.chatline, nodes).textContent);
-                        //node = nodes > 1 ? $(site.chatline, nodes) : nodes;
-                        //console.log("nodes", nodes);
-                        //console.log("line", $(site.chatline, nodes));
-                        //console.log("node", node);
                     }
 
                 });
-
-                //console.log(node);
-                return callback(node);
+                
+                //console.log(user, node, badge);
+                return callback({ user, node, badge });
 
             }).observe($(site.chat, doc), obsconfig);
 
@@ -623,7 +583,7 @@
 
         const fetcher = (url, data) => {
             return (text) => {
-                console.log(data + text, "fuck off");
+                //console.log("fetch" + data + text);
                 return fetch(url, {
                     method: "post",
                     mode: "cors",
@@ -648,19 +608,38 @@
     const Ui = (() => {
 
         const init = () => {
-            theme();
-            container();
+
+            container()
             
             //temp
             Array.from($.$(".ct-click")).map(el =>
                 $.on(el, "click", (e) =>
-                    $.tgl(e.target, "ct-active")));
+                    $.tgl(e.target, "ct-active")))
 
         };
 
-        const theme = () => {
+        const alert = (text, stay, time) => {
+
+            var el1;
+
+            var container = $.el("div", "ct-alert")
+                $.add(container, el1 = $.el("div", "", text))
+                $.add(container, el1 = $.el("div", "", "X"))
+                $.on(el1, "click", () => container.remove())
+
+            $.add( $(".ct-ct"), container)
+ 
+            if(!stay) {
+                setTimeout(() => container.remove(), time || 2000)
+            }
+
+            //...
+
+        }
+
+        const theme = (() => {
             var asdf = `
-                .ct-ct{
+                .ct-ct {
                     top: 35vh;
                     right: 80vh;
                     z-index: 9998;
@@ -726,6 +705,16 @@
                     margin-block-end: 0.5em;
                 }
 
+                .ct-badge {
+                    margin-bottom: .2rem;
+                    margin-right: .3rem;
+                    vertical-align: middle;
+                }
+                
+                .ct-alert {
+                    top: 0;
+                }
+
                 .ct-click {
                     cursor: pointer;
                 }
@@ -775,20 +764,20 @@
             `;
 
             if($(".ct-css")) $(".ct-css").remove();
-            var w;
-            $.wait("head", function(e) {
-                $.add(e, w = $.el('style', "ct-css", asdf));
-                console.log(e, w);
-            })
+            var el1;
+            // $.wait("head", function(e) {
+            $.add(document.head, el1 = $.el('style', "ct-css", asdf));
+            //    console.log(e, el1);
+            //})
 
 
-        };
+        })();
 
         const container = () => {
 
             var el1, el2, el3, el4, move;
 
-            var container = $.el("div", "ct-ct");
+            var container = $.el("div", "ct-ct ct-hidden");
 
             //header
             $.add(container, move = $.el("div", "ct-header ct-move"));
@@ -826,26 +815,29 @@
                 window.location.reload();
             })
 
-
             //body
             $.add(container, el1 = $.el("div", "ct-main"));
 
                 $.add(el1, el2 = $.el("div", "ct-colum ct-language"));
-                    $.add(el2, el3 = $.el("select", "ct-language1"));
-                    for (let i = 0; i < Site.Languages.length; i++) {
-                        el4 = $.el("option", "ct", Site.Languages[i].lang);
-                        el4.value = Site.Languages[i].value;
-                        el3.append(el4);
-                    }
+                    $.add(el2, $.el("p", "ct-text ct-output", Conf["language2"]));
+                    for (var key in Config.languageSettings) {
+                        $.add(el2, el3 = $.el("select", undefined, key));
+                        el3.name = key;
 
-                    $.add(el2, el3 = $.el("select", "ct-language2"));
-                    el3.multiple = true;
-                    for (let i = 0; i < Site.Languages.length; i++) {
-                        el4 = $.el("option", "ct", Site.Languages[i].lang);
-                        el4.value = Site.Languages[i].value;
-                        el3.append(el4);
-                    }
-                    $.add(el2, el3 = $.el("p", "ct-text ct-output"));
+                        //...
+                        el3.multiple = key === "language1" ? false : true 
+
+                        $.on(el3, "change", $.save.option)
+                        
+                        for (let i = 0; i < Site.Languages.length; i++) {
+                            el4 = $.el("option", undefined, Site.Languages[i].lang);
+                            el4.value = Site.Languages[i].value;
+                            el3.append(el4);
+                        }
+
+                        $.on(el3, "change", () => $(".ct-output").innerHTML = Conf["language2"])
+                        $.load.option.call(el3)
+                    }        
 
                 $.add(el1, el2 = $.el("div", "ct-colum3 ct-settings"));
                     $.add(el2, $.el("div", "ct-title ct-hr ct-text", "Settings"));
@@ -904,8 +896,8 @@
                 //     }
                 
             $.drag(move, container)
-            $.add($("body"), container);
-            console.log(container);
+            $.add(document.body, container);
+            //console.log(container);
         };
 
         return { init };
@@ -934,27 +926,6 @@
             
             return key.trim();
         };
-
-
-        const modal = (conf) => {
-
-            console.log(conf);
-
-            const [key, info] = conf;
-
-            var el1, el2;
-            var container = $.el("div", "ct-modal")
-            $.add(container, el2 = $.el("div", "ct-text", key))
-            $.add( $("body"), container);
-
-
-
-            setTimeout(() => {
-                console.log(info);
-                //container.remove();
-            }, 500);
-
-        }
        
         const keybinds = () => {
 
@@ -981,7 +952,17 @@
         
     })();
 
-    const Main = (() => {
+    const App = (() => {
+
+        const addon = () => {
+
+            var users = {
+                "developer": ["l_iima"],
+                "supporter": []
+            }
+            
+            return { users }
+        }
 
         const loadConfig = () => {
             var ctct = JSON.parse(localStorage.getItem("ct-config-test"));
@@ -1044,20 +1025,18 @@
         }
 
         const init = () => {
-
             loadConfig()
-            Keybind.init();
-
+            Keybind.init()
+            Chat.init()
             $.on(document, "DOMContentLoaded", () => {
-                Ui.init();
-                Chat.init();
-            })
+                Ui.init()
+            }) 
         };
 
-        return { init };
+        return { init, addon };
 
     })();
 
-    Main.init();
+    App.init();
 
 })();
