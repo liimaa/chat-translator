@@ -1,6 +1,12 @@
 # chat-translator
 Chat translator is Javascript translation addon for chats.
 
+  ### Install
+  Script uses [Tampermonkey](https://www.tampermonkey.net), [Violentmonkey](https://violentmonkey.github.io) or [Greasemonkey](https://www.greasespot.net/) script manager for its installation. 
+  After manager installation
+  [click here to install.](https://raw.githubusercontent.com/liimaa/chat-translator/master/main.user.js)
+  
+  
 ## Supported sites
 - twitch
 - youtube
@@ -22,14 +28,18 @@ Chat translator is Javascript translation addon for chats.
       chatnode : .element | chat textline
       obsconfig : 'optional'  | MutationObserver config default is, childList : true
       button : 'optional' .element | prepend's to element'
-    
+      user : 'optional' .element
+      badge :  'optional' .element
+      
       example below >
   
       name: "twitch.tv",
       match: "twitch.tv/",
       chat: ".chat-list [role='log']",
       chatline: "span[data-a-target='chat-message-text']",
-      button: ".top-nav__menu > div:nth-child(3)"
+      button: ".top-nav__menu > div:nth-child(3)",
+      user: ".chat-line__username",
+      badge: ".chat-line__message > span"
       
   ### Supported languages
   [language list](https://tech.yandex.com/translate/doc/dg/concepts/api-overview-docpage/#api-overview__languages).
