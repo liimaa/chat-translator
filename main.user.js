@@ -17,7 +17,6 @@
 // @match        https://*.nicovideo.jp/*
 // @match        https://sketch.pixiv.net/@*
 // @match        https://www.periscope.tv/w/*
-// @supportURL   https://github.com/liimaa/chat-translator/issues
 // @updateURL    https://raw.githubusercontent.com/liimaa/chat-translator/master/main.meta.js
 // @downloadURL  https://raw.githubusercontent.com/liimaa/chat-translator/master/main.user.js
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwwAADsMBx2+oZAAAAFRJREFUOE/NjEEOwCAMw/j/pzskRx1NuTBxmE+NSRhxyK8HoyLb0MO2hEwk84E8IQIRDxtlfBmshdsDa080MJt0r7xu7OZI3kwPpOoY/IPO8aAQ8QAVLnamZKyidwAAAABJRU5ErkJggg==
@@ -392,7 +391,7 @@
             "ignore spam": [true, "Ignore's spamlike messages"]
         },
         inputSettings: {
-            "apikey": ["trnsl.1.1.20190123T075015Z.16e7f20b61b0463d.7a0405224ebdc152dbe31bcb3c34262a74e2b170", "Yandex api key"],
+            "apikey": ["", "Yandex api key"],
         },
         languageSettings: {
             "language1": ["fi"],
