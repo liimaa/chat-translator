@@ -6,6 +6,8 @@ Chat translator is Javascript translation addon for chats.
   After manager installation
   [click here to install.](https://raw.githubusercontent.com/liimaa/chat-translator/master/main.user.js)
   
+  ### Demo
+  ![Demo](https://media.giphy.com/media/f3v4ls2Kn5Jnc3kbDi/giphy.gif) ![Panel](https://i.imgur.com/poO42On.png)
   
 ## Supported sites
 - twitch
