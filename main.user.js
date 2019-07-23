@@ -32,18 +32,10 @@
 
     var $ = (() => {
 
-        //var docbody = !document.body ? parent.document.body : document.body;
-        //var doc = !document.body ? parent.document.documentElement : document.documentElement;
         var doc = document.documentElement;
 
         var $ = function(selector, root) {
-            var el = (root || document).querySelector(selector);
-            // if(el === null) {
-            //     el = parent.document.querySelector(selector);
-            //     el ? console.log("parent", el) : 1;
-            //     console.log(el, selector);
-            // }
-            return el;
+            return (root || document).querySelector(selector);
         };
         $.$ = function(selector, root){
             return (root || document).querySelectorAll(selector);
@@ -160,8 +152,9 @@
                 localStorage.setItem("ct-config", JSON.stringify(Conf));
             }
         };
+        $.tm;
         $.wait = function(selector, callback) {
-            setTimeout(() => {
+            $.tm = setTimeout(() => {
                 var el = $(selector);
                 if(el) {
                     callback(el);
@@ -182,7 +175,6 @@
             }
             return a
         }
-
         return $;
     })();
 
@@ -391,7 +383,7 @@
             "ignore spam": [true, "Ignore's spamlike messages"]
         },
         inputSettings: {
-            "apikey": ["", "Yandex api key"],
+            "apikey": ["trnsl.1.1.20190721T195304Z.b478cf33cf4c4650.6c57b44ed840917e2c8503eeee7598f4e8259784", "Yandex api key"],
         },
         languageSettings: {
             "language1": ["fi"],
@@ -419,48 +411,30 @@
 
         const init = () => {
 
-            Site.Sites.some((site) => {
-                //console.log(site.match && (new RegExp(site.match, 'i')).test(window.location.href));
-                if (site.match && (new RegExp(site.match, 'i')).test(window.location.href)) {
-                                 
-                    if(site.iframe) {
-                        $.wait(site.iframe, (e) => 
-                            $.on(e, "load", () => {
-                                site.doc = e.contentDocument || e.contentWindow.document
-                                console.log(site, site.doc.body);
-                                translator(site)
-                            })
-                        )
-                    } else {
-                        $.wait(site.chat, (e) => {
-                            console.log(site);
-                            translator(site);
-                        });
-                    }
-                }
-            });
+            var site = App.siteConf()
+
+            if(site.iframe) {
+                $.wait(site.iframe, (e) => 
+                    $.on(e, "load", () => {
+                        site.doc = e.contentDocument || e.contentWindow.document
+                        console.log(site, site.doc.body);
+                        translator(site)
+                    })
+                )
+            } else {
+                $.wait(site.chat, (e) => {
+                    console.log(site);
+                    translator(site);
+                });
+            }
         };
 
         const translator = (site) => {    
-
-            if(site.button) {
-                $.wait(site.button, (e) => { 
-                    //console.log("button", e);
-                    var ct = $.el("div", "ct-button", "CT");
-                    ct.style.cursor = 'pointer'; 
-                    ct.style.fontSize = "14px";
-                    ct.style.margin = "auto 10px";
-                    e.insertBefore(ct, e.childNodes[0])
-                    $.on(ct, "click", () => $.tgl($(".ct-ct"), "ct-hidden"))
-
-                });
-            }
 
             observe(site, (props) => {
                 const {node, user, badge} = props
                 
                 if(!node) return
-
 
                 if(site.badge) {
                     const {users} = App.addon()
@@ -493,7 +467,7 @@
 
                 if(Conf["ignore spam"][0]) {
                     if(spamFilter(node)) {
-                        console.log(`filtered ${node.innerText}`)
+                        //console.log(`filtered ${node.innerText}`)
                         return;
                     }
                 }
@@ -568,7 +542,7 @@
 
             let nodes, node, chatline, user, badge;
             const doc = site.iframe ? site.doc : document;
-            const obsconfig = site.obsconfig ? site.obsconfig : { childList: true};
+            const obsconfig = site.obsconfig ? site.obsconfig : { childList: true };
 
             //console.log("check frame", doc, $(site.chat, doc));
 
@@ -632,6 +606,7 @@
 
         const init = () => {
 
+            site()
             container()
             
             //temp
@@ -641,6 +616,20 @@
 
         };
 
+        const site = () => {
+            const site = App.siteConf()
+            if(site.button) {
+                $.wait(site.button, (e) => { 
+                    const ct = $.el("div", "ct-button", "CT");
+                    ct.style.cursor = 'pointer'; 
+                    ct.style.fontSize = "14px";
+                    ct.style.margin = "auto 10px";
+                    e.insertBefore(ct, e.childNodes[0])
+                    $.on(ct, "click", () => $.tgl($(".ct-ct"), "ct-hidden"))
+                });
+            }
+        };
+                
         const alert = (text, stay, time) => {
 
             var el1;
@@ -866,7 +855,6 @@
                     $.add(el2, $.el("div", "ct-title ct-hr ct-text", "Settings"));
                     for (var key in Config.settings) {
                         $.add(el2, el3 = $.el("div", "ct-text", key));
-                        console.log(Config.settings[key]);
                         $.add(el3, $.el("span", "ct-text", Config.settings[key][1]));
                         $.add(el3, el4 = $.el("input"));
                         el4.type = "checkbox";
@@ -1043,16 +1031,29 @@
             
         }
 
+        const siteConf = () => {
+            var s = {};
+            Site.Sites.some((site) => {
+                if (site.match && (new RegExp(site.match, 'i')).test(window.location.href)) {
+                    s = site
+                }
+            });
+            return s
+        };
+
         const init = () => {
             loadConfig()
             Keybind.init()
             Chat.init()
-            $.on(document, "DOMContentLoaded", () => {
-                Ui.init()
-            }) 
-        };
+            $.on(document, "DOMContentLoaded", () => Ui.init())
+            history.pushState = () => {
+                //console.log("clear tm's on url change", $.tm);
+                clearTimeout($.tm)
+                Chat.init()
+            }
+        }
 
-        return { init, addon };
+        return { init, addon, siteConf };
 
     })();
 
