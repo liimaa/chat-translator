@@ -10,7 +10,6 @@
 // @match        https://www.smashcast.tv/*
 // @match        https://mixer.com/*
 // @match        http://www.bigo.tv/*
-// @match        play.afreecatv.com/*
 // @match        https://www.huya.com/*
 // @match        https://instagib.tv/*
 // @match        https://live.bilibili.com/*
